@@ -23,7 +23,7 @@ uint16_t calculateCRC(const uint8_t* buf, int len) {
 }
 
 // Win32 Serial Helper: Open Port
-HANDLE openPort(const std::string& portName, DWORD baudRate = 9600) {
+HANDLE openPort(const std::string& portName, DWORD baudRate = 19200) {
     // Format port name for Windows (e.g. \\.\COM3)
     std::string formattedPort = "\\\\.\\" + portName;
     
@@ -84,11 +84,7 @@ HANDLE openPort(const std::string& portName, DWORD baudRate = 9600) {
     return hSerial;
 }
 
-// Modbus Function Code 03: Read Holding Registers
-bool readRegisters(HANDLE hSerial, uint8_t slaveId, uint16_t startRegAddress, uint16_t numRegisters, int16_t* outValues) {
-    // Modbus packets are 0-based protocol addresses
-    uint16_t address = startRegAddress - 1;
-
+bool readRegisters(HANDLE hSerial, uint8_t slaveId, uint16_t address, uint16_t numRegisters, int16_t* outValues) {
     uint8_t frame[8];
     frame[0] = slaveId;
     frame[1] = 0x03;
@@ -150,10 +146,7 @@ bool readRegisters(HANDLE hSerial, uint8_t slaveId, uint16_t startRegAddress, ui
 }
 
 // Modbus Function Code 06: Write Single Register
-bool writeRegister(HANDLE hSerial, uint8_t slaveId, uint16_t regAddress, int16_t value) {
-    // Modbus packets are 0-based protocol addresses
-    uint16_t address = regAddress - 1;
-
+bool writeRegister(HANDLE hSerial, uint8_t slaveId, uint16_t address, int16_t value) {
     uint8_t frame[8];
     frame[0] = slaveId;
     frame[1] = 0x06;
@@ -231,8 +224,8 @@ int main() {
         }
     }
 
-    std::cout << "\n[INFO] Opening serial port " << portName << " at 9600 baud..." << std::endl;
-    HANDLE hSerial = openPort(portName, 9600);
+    std::cout << "\n[INFO] Opening serial port " << portName << " at 19200 baud..." << std::endl;
+    HANDLE hSerial = openPort(portName, 19200);
     if (hSerial == INVALID_HANDLE_VALUE) {
         std::cerr << "[FATAL] Unable to connect to positioner." << std::endl;
         return 1;
@@ -263,8 +256,8 @@ int main() {
             bool success = true;
 
             if (!readRegisters(hSerial, slaveId, 3, 1, &azVal)) success = false;
-            if (!readRegisters(hSerial, slaveId, 11, 1, &elVal)) success = false;
-            if (!readRegisters(hSerial, slaveId, 19, 1, &plVal)) success = false;
+            if (!readRegisters(hSerial, slaveId, 10, 1, &elVal)) success = false;
+            if (!readRegisters(hSerial, slaveId, 18, 1, &plVal)) success = false;
 
             if (success) {
                 float azDeg = azVal / 10.0f;
@@ -290,8 +283,8 @@ int main() {
                         std::cout << "Out of range!" << std::endl;
                     } else {
                         int16_t writeVal = (int16_t)(targetVal * 10.0f);
-                        std::cout << "[INFO] Writing " << writeVal << " to AZREF (Reg 2)..." << std::endl;
-                        if (writeRegister(hSerial, slaveId, 2, writeVal)) {
+                        std::cout << "[INFO] Writing " << writeVal << " to AZREF (Addr 3)..." << std::endl;
+                        if (writeRegister(hSerial, slaveId, 3, writeVal)) {
                             std::cout << "[SUCCESS] Target angle set." << std::endl;
                         }
                     }
@@ -311,7 +304,7 @@ int main() {
                         std::cout << "Out of range!" << std::endl;
                     } else {
                         int16_t writeVal = (int16_t)(targetVal * 10.0f);
-                        std::cout << "[INFO] Writing " << writeVal << " to ELREF (Reg 10)..." << std::endl;
+                        std::cout << "[INFO] Writing " << writeVal << " to ELREF (Addr 10)..." << std::endl;
                         if (writeRegister(hSerial, slaveId, 10, writeVal)) {
                             std::cout << "[SUCCESS] Target angle set." << std::endl;
                         }
@@ -332,7 +325,7 @@ int main() {
                         std::cout << "Out of range!" << std::endl;
                     } else {
                         int16_t writeVal = (int16_t)(targetVal * 10.0f);
-                        std::cout << "[INFO] Writing " << writeVal << " to PLREF (Reg 18)..." << std::endl;
+                        std::cout << "[INFO] Writing " << writeVal << " to PLREF (Addr 18)..." << std::endl;
                         if (writeRegister(hSerial, slaveId, 18, writeVal)) {
                             std::cout << "[SUCCESS] Target angle set." << std::endl;
                         }

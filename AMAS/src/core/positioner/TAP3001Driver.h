@@ -35,8 +35,8 @@ private:
 
     // Modbus utility methods
     uint16_t calculateCRC(const uint8_t* buf, int len) const;
-    bool readRegs(uint16_t startReg, uint16_t numRegs, int16_t* outVals);
-    bool writeReg(uint16_t reg, int16_t val);
+    bool readRegs(uint16_t address, uint16_t numRegs, int16_t* outVals);
+    bool writeReg(uint16_t address, int16_t val);
 };
 
 } // namespace AMAS

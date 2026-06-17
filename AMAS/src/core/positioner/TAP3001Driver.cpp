@@ -56,7 +56,7 @@ bool TAP3001Driver::connect(const std::string& port) {
         return false;
     }
 
-    dcbSerialParams.BaudRate = CBR_9600;
+    dcbSerialParams.BaudRate = CBR_19200;
     dcbSerialParams.ByteSize = 8;
     dcbSerialParams.StopBits = ONESTOPBIT;
     dcbSerialParams.Parity = NOPARITY;
@@ -124,7 +124,7 @@ bool TAP3001Driver::moveTo(float angle_deg) {
     int16_t writeVal = (int16_t)(angle_deg * 10.0f);
     
     Log::info("TAP3001Driver: Moving Azimuth to " + std::to_string(angle_deg) + " deg (Register Value: " + std::to_string(writeVal) + ")");
-    return writeReg(2, writeVal); // Register 2 is AZREF
+    return writeReg(3, writeVal); // Address 3 is AZ target/current
 }
 
 float TAP3001Driver::getCurrentAngle() {
@@ -178,7 +178,7 @@ void TAP3001Driver::emergencyStop() {
     float current = getCurrentAngle();
     m_targetAngle = current;
     int16_t writeVal = (int16_t)(current * 10.0f);
-    writeReg(2, writeVal); // Set AZREF to current AZ position immediately
+    writeReg(3, writeVal); // Set AZ target to current AZ position immediately
 }
 
 bool TAP3001Driver::isConnected() const {
@@ -189,7 +189,7 @@ bool TAP3001Driver::isConnected() const {
 float TAP3001Driver::getElevationAngle() {
     if (!m_connected) return 0.0f;
     int16_t elVal = 0;
-    if (readRegs(11, 1, &elVal)) { // Register 11 is ELCUR
+    if (readRegs(10, 1, &elVal)) { // Address 10 is EL target/current
         return elVal / 10.0f;
     }
     return 0.0f;
@@ -198,7 +198,7 @@ float TAP3001Driver::getElevationAngle() {
 float TAP3001Driver::getPolarizationAngle() {
     if (!m_connected) return 0.0f;
     int16_t plVal = 0;
-    if (readRegs(19, 1, &plVal)) { // Register 19 is PLCUR
+    if (readRegs(18, 1, &plVal)) { // Address 18 is PL target/current
         return plVal / 10.0f;
     }
     return 0.0f;
@@ -242,11 +242,8 @@ uint16_t TAP3001Driver::calculateCRC(const uint8_t* buf, int len) const {
 }
 
 // Write Modbus Register (Function Code 06)
-bool TAP3001Driver::writeReg(uint16_t reg, int16_t val) {
+bool TAP3001Driver::writeReg(uint16_t address, int16_t val) {
     if (m_hSerial == INVALID_HANDLE_VALUE) return false;
-
-    // Modbus packets require 0-based protocol addresses
-    uint16_t address = reg - 1;
 
     uint8_t frame[8];
     frame[0] = m_slaveId;
@@ -297,11 +294,8 @@ bool TAP3001Driver::writeReg(uint16_t reg, int16_t val) {
 }
 
 // Read Modbus Registers (Function Code 03)
-bool TAP3001Driver::readRegs(uint16_t startReg, uint16_t numRegs, int16_t* outVals) {
+bool TAP3001Driver::readRegs(uint16_t address, uint16_t numRegs, int16_t* outVals) {
     if (m_hSerial == INVALID_HANDLE_VALUE) return false;
-
-    // Modbus packets require 0-based protocol addresses
-    uint16_t address = startReg - 1;
 
     uint8_t frame[8];
     frame[0] = m_slaveId;
