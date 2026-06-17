@@ -78,6 +78,8 @@ set(SOURCES
     src/core/positioner/IPositionerDriver.h
     src/core/positioner/MockPositionerDriver.h
     src/core/positioner/MockPositionerDriver.cpp
+    src/core/positioner/TAP3001Driver.h
+    src/core/positioner/TAP3001Driver.cpp
     # Logging
     src/core/log/Logger.h
     src/core/log/Logger.cpp
